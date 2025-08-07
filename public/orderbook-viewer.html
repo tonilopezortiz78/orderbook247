@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrderBook247 - BTCUSDT Live Orderbook</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-bar {
+            background: #2a2a2a;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .orderbook-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 700px;
+        }
+
+        .orderbook-side {
+            padding: 30px;
+            border-right: 1px solid #333;
+        }
+
+        .orderbook-side:last-child {
+            border-right: none;
+        }
+
+        .orderbook-side.bids {
+            background: #1a1a1a;
+        }
+
+        .orderbook-side.asks {
+            background: #1a1a1a;
+        }
+
+        .side-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #ffffff;
+        }
+
+        .side-header h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+
+
+        .orderbook-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #2a2a2a;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+        }
+
+        .orderbook-table th {
+            background: #333;
+            color: white;
+            padding: 15px 10px;
+            text-align: right;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #444;
+        }
+
+        .orderbook-table th:first-child {
+            text-align: left;
+        }
+
+        .orderbook-table td {
+            padding: 12px 10px;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .orderbook-table td:first-child {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .orderbook-table tr:hover {
+            background: #3a3a3a;
+        }
+
+        .orderbook-table tr:nth-child(even) {
+            background: #2f2f2f;
+        }
+
+        .orderbook-table tr:nth-child(even):hover {
+            background: #3a3a3a;
+        }
+
+        .price-cell {
+            position: relative;
+        }
+
+        .bids .price-cell {
+            color: #ff6b6b;
+        }
+
+        .asks .price-cell {
+            color: #51cf66;
+        }
+
+        .quantity-cell {
+            color: #ffffff;
+        }
+
+        .quantity-usdt-cell {
+            color: #ffa8a8;
+            font-weight: bold;
+        }
+
+        .acc-quantity-cell {
+            color: #74c0fc;
+            font-weight: bold;
+        }
+
+        .acc-usdt-cell {
+            color: #ffd43b;
+            font-weight: bold;
+        }
+
+        .age-cell {
+            color: #adb5bd;
+            font-size: 0.8rem;
+        }
+
+        .flash-update {
+            animation: flash 0.5s ease-in-out;
+        }
+
+        @keyframes flash {
+            0% { background-color: transparent; }
+            50% { background-color: rgba(255, 255, 0, 0.3); }
+            100% { background-color: transparent; }
+        }
+
+        .flash-update-bid {
+            animation: flashBid 0.8s ease-in-out;
+        }
+
+        @keyframes flashBid {
+            0% { background-color: transparent; }
+            25% { background-color: rgba(255, 107, 107, 0.4); }
+            50% { background-color: rgba(255, 107, 107, 0.6); }
+            75% { background-color: rgba(255, 107, 107, 0.4); }
+            100% { background-color: transparent; }
+        }
+
+        .flash-update-ask {
+            animation: flashAsk 0.8s ease-in-out;
+        }
+
+        @keyframes flashAsk {
+            0% { background-color: transparent; }
+            25% { background-color: rgba(81, 207, 102, 0.4); }
+            50% { background-color: rgba(81, 207, 102, 0.6); }
+            75% { background-color: rgba(81, 207, 102, 0.4); }
+            100% { background-color: transparent; }
+        }
+
+        .liquidity-bar {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(116, 192, 252, 0.1);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #888;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #ff6b6b;
+        }
+
+        .last-update {
+            text-align: center;
+            padding: 15px;
+            background: #2a2a2a;
+            color: #888;
+            font-size: 0.9rem;
+            border-top: 1px solid #333;
+        }
+
+        .sort-info {
+            text-align: center;
+            padding: 10px;
+            background: #333;
+            color: #74c0fc;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #444;
+        }
+
+        .bids-header th {
+            background-color: #2d3748;
+            color: #ff6b6b;
+            font-weight: bold;
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 2px solid #4a5568;
+        }
+
+        .asks-header th {
+            background-color: #2d3748;
+            color: #51cf66;
+            font-weight: bold;
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 2px solid #4a5568;
+        }
+
+        /* Individual column header colors for bids */
+        .bids-header th:nth-child(1) { color: #ff6b6b; } /* Price - red */
+        .bids-header th:nth-child(2) { color: #ffffff; } /* Quantity BTC - white */
+        .bids-header th:nth-child(3) { color: #ffa8a8; } /* Quantity USDT - pink */
+        .bids-header th:nth-child(4) { color: #74c0fc; } /* Acc Qty BTC - blue */
+        .bids-header th:nth-child(5) { color: #74c0fc; } /* Acc USDT - blue */
+        .bids-header th:nth-child(6) { color: #adb5bd; } /* Age - gray */
+
+        /* Individual column header colors for asks */
+        .asks-header th:nth-child(1) { color: #51cf66; } /* Price - green */
+        .asks-header th:nth-child(2) { color: #ffffff; } /* Quantity BTC - white */
+        .asks-header th:nth-child(3) { color: #ffa8a8; } /* Quantity USDT - pink */
+        .asks-header th:nth-child(4) { color: #74c0fc; } /* Acc Qty BTC - blue */
+        .asks-header th:nth-child(5) { color: #74c0fc; } /* Acc USDT - blue */
+        .asks-header th:nth-child(6) { color: #adb5bd; } /* Age - gray */
+
+        @media (max-width: 768px) {
+            .orderbook-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 OrderBook247</h1>
+            <p>Live BTCUSDT Orderbook - Sorted by Liquidity (Quantity)</p>
+        </div>
+
+        <div class="sort-info">
+            🔥 Showing Top 10 Most Liquid Price Levels (Sorted by Quantity)
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="midPrice">--</div>
+                <div class="stat-label">Mid Price (USDT)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="spread">--</div>
+                <div class="stat-label">Spread (USDT)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="spreadPercent">--</div>
+                <div class="stat-label">Spread (%)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalLevels">--</div>
+                <div class="stat-label">Total Levels</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="lastUpdate">--</div>
+                <div class="stat-label">Last Update</div>
+            </div>
+        </div>
+
+        <div class="orderbook-container">
+            <div class="orderbook-side bids">
+                <div class="side-header">
+                    <h2>🟢 Bids (Buy Orders)</h2>
+                </div>
+                <table class="orderbook-table">
+                    <thead class="bids-header">
+                        <tr>
+                            <th>Price (USDT)</th>
+                            <th>Quantity (BTC)</th>
+                            <th>Quantity (USDT)</th>
+                            <th>Acc Qty (BTC)</th>
+                            <th>Acc USDT</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bidsTable">
+                        <tr>
+                            <td colspan="4" class="loading">Loading bids...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="orderbook-side asks">
+                <div class="side-header">
+                    <h2>🔴 Asks (Sell Orders)</h2>
+                </div>
+                <table class="orderbook-table">
+                    <thead class="asks-header">
+                        <tr>
+                            <th>Price (USDT)</th>
+                            <th>Quantity (BTC)</th>
+                            <th>Quantity (USDT)</th>
+                            <th>Acc Qty (BTC)</th>
+                            <th>Acc USDT</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="asksTable">
+                        <tr>
+                            <td colspan="4" class="loading">Loading asks...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="last-update">
+            Last updated: <span id="updateTime">--</span>
+        </div>
+    </div>
+
+    <script>
+        class OrderBookViewer {
+            constructor() {
+                this.ws = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                this.reconnectDelay = 3000;
+                this.updateInterval = null;
+                this.lastData = null;
+                this.previousData = null;
+                
+                this.init();
+            }
+
+            init() {
+                this.connectWebSocket();
+                this.startPeriodicUpdates();
+            }
+
+            connectWebSocket() {
+                try {
+                    this.ws = new WebSocket(`ws://${window.location.host}`);
+                    
+                    this.ws.onopen = () => {
+                        console.log('WebSocket connected');
+                        this.reconnectAttempts = 0;
+                        this.ws.send(JSON.stringify({ action: 'subscribe', symbol: 'btcusdt' }));
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (data.type === 'orderbook_update' && data.symbol === 'btcusdt') {
+                                this.updateOrderbook(data.data);
+                            }
+                        } catch (error) {
+                            console.error('Error parsing WebSocket message:', error);
+                        }
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log('WebSocket disconnected');
+                        this.scheduleReconnect();
+                    };
+
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                    };
+
+                } catch (error) {
+                    console.error('Error connecting to WebSocket:', error);
+                    this.scheduleReconnect();
+                }
+            }
+
+            scheduleReconnect() {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    console.log(`Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`);
+                    setTimeout(() => this.connectWebSocket(), this.reconnectDelay);
+                } else {
+                    console.error('Max reconnection attempts reached');
+                    this.showError('Connection lost. Please refresh the page.');
+                }
+            }
+
+            startPeriodicUpdates() {
+                // Initial load
+                this.fetchOrderbookData();
+                
+                // Update every 3 seconds as fallback
+                this.updateInterval = setInterval(() => {
+                    this.fetchOrderbookData();
+                }, 3000);
+            }
+
+            async fetchOrderbookData() {
+                try {
+                    const response = await fetch('/api/orderbooks/btcusdt');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            this.processOrderbookData(data.data);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching orderbook data:', error);
+                }
+            }
+
+            processOrderbookData(data) {
+                const now = Date.now();
+                
+                // First, sort by price for correct accumulated calculations
+                const bidsByPrice = [...data.bids].sort((a, b) => b.price - a.price); // Highest to lowest for bids
+                const asksByPrice = [...data.asks].sort((a, b) => a.price - b.price); // Lowest to highest for asks
+                
+                // Calculate accumulated values correctly
+                let accBidQty = 0;
+                let accBidCost = 0;
+                const bidsWithAcc = bidsByPrice.map(bid => {
+                    accBidQty += bid.quantity;
+                    accBidCost += bid.quantity * bid.price;
+                    return {
+                        ...bid,
+                        accumulatedQuantity: accBidQty,
+                        accumulatedCost: accBidCost
+                    };
+                });
+
+                let accAskQty = 0;
+                let accAskCost = 0;
+                const asksWithAcc = asksByPrice.map(ask => {
+                    accAskQty += ask.quantity;
+                    accAskCost += ask.quantity * ask.price;
+                    return {
+                        ...ask,
+                        accumulatedQuantity: accAskQty,
+                        accumulatedCost: accAskCost
+                    };
+                });
+                
+                // Now sort by quantity (liquidity) for display, but keep the accumulated values
+                const sortedBids = [...bidsWithAcc].sort((a, b) => b.quantity - a.quantity).slice(0, 10);
+                const sortedAsks = [...asksWithAcc].sort((a, b) => b.quantity - a.quantity).slice(0, 10);
+
+                // Add age to the final sorted data
+                const processedBids = sortedBids.map(bid => ({
+                    ...bid,
+                    age: (now - bid.timestamp) / 1000
+                }));
+
+                const processedAsks = sortedAsks.map(ask => ({
+                    ...ask,
+                    age: (now - ask.timestamp) / 1000
+                }));
+
+                const processedData = {
+                    ...data,
+                    bids: processedBids,
+                    asks: processedAsks
+                };
+
+                this.updateOrderbook(processedData);
+            }
+
+            updateOrderbook(data) {
+                // Only update if data has actually changed to prevent flashing
+                if (JSON.stringify(data) === JSON.stringify(this.lastData)) {
+                    return;
+                }
+                
+                this.previousData = this.lastData;
+                this.lastData = data;
+
+                this.updateStats(data);
+                this.updateBidsTable(data.bids);
+                this.updateAsksTable(data.asks);
+                this.updateTime();
+            }
+
+            updateStats(data) {
+                const midPrice = data.midPrice;
+                const spread = data.spread;
+                const spreadPercent = midPrice ? ((spread / midPrice) * 100).toFixed(4) : '--';
+                const totalLevels = (data.bids?.length || 0) + (data.asks?.length || 0);
+
+                // Only update if values have changed
+                const midPriceEl = document.getElementById('midPrice');
+                const spreadEl = document.getElementById('spread');
+                const spreadPercentEl = document.getElementById('spreadPercent');
+                const totalLevelsEl = document.getElementById('totalLevels');
+
+                if (midPriceEl.textContent !== (midPrice ? midPrice.toFixed(2) : '--')) {
+                    midPriceEl.textContent = midPrice ? midPrice.toFixed(2) : '--';
+                }
+                if (spreadEl.textContent !== (spread ? spread.toFixed(2) : '--')) {
+                    spreadEl.textContent = spread ? spread.toFixed(2) : '--';
+                }
+                if (spreadPercentEl.textContent !== spreadPercent) {
+                    spreadPercentEl.textContent = spreadPercent;
+                }
+                if (totalLevelsEl.textContent !== totalLevels.toString()) {
+                    totalLevelsEl.textContent = totalLevels;
+                }
+            }
+
+            updateBidsTable(bids) {
+                if (!bids || bids.length === 0) return;
+
+                const tbody = document.getElementById('bidsTable');
+
+                tbody.innerHTML = bids.map(bid => {
+                    const hasChanged = this.hasBidChanged(bid);
+                    return `
+                        <tr class="${hasChanged ? 'flash-update-bid' : ''}">
+                            <td class="price-cell">${bid.price.toFixed(2)}</td>
+                            <td class="quantity-cell">${bid.quantity.toFixed(4)}</td>
+                            <td class="quantity-usdt-cell">${(bid.quantity * bid.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td class="acc-quantity-cell">${bid.accumulatedQuantity.toFixed(4)}</td>
+                            <td class="acc-usdt-cell">${bid.accumulatedCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td class="age-cell">${this.formatAge(bid.age)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            updateAsksTable(asks) {
+                if (!asks || asks.length === 0) return;
+
+                const tbody = document.getElementById('asksTable');
+
+                tbody.innerHTML = asks.map(ask => {
+                    const hasChanged = this.hasAskChanged(ask);
+                    return `
+                        <tr class="${hasChanged ? 'flash-update-ask' : ''}">
+                            <td class="price-cell">${ask.price.toFixed(2)}</td>
+                            <td class="quantity-cell">${ask.quantity.toFixed(4)}</td>
+                            <td class="quantity-usdt-cell">${(ask.quantity * ask.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td class="acc-quantity-cell">${ask.accumulatedQuantity.toFixed(4)}</td>
+                            <td class="acc-usdt-cell">${ask.accumulatedCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td class="age-cell">${this.formatAge(ask.age)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            hasBidChanged(newBid) {
+                if (!this.previousData || !this.previousData.bids) return false;
+                const oldBid = this.previousData.bids.find(b => Math.abs(b.price - newBid.price) < 0.01);
+                if (!oldBid) return true; // New price level
+                return Math.abs(oldBid.quantity - newBid.quantity) > 0.0001;
+            }
+
+            hasAskChanged(newAsk) {
+                if (!this.previousData || !this.previousData.asks) return false;
+                const oldAsk = this.previousData.asks.find(a => Math.abs(a.price - newAsk.price) < 0.01);
+                if (!oldAsk) return true; // New price level
+                return Math.abs(oldAsk.quantity - newAsk.quantity) > 0.0001;
+            }
+
+            formatAge(ageInSeconds) {
+                if (!ageInSeconds || ageInSeconds < 0) return 'N/A';
+                
+                if (ageInSeconds < 1) return '<1s';
+                if (ageInSeconds < 60) return `${Math.floor(ageInSeconds)}s`;
+                if (ageInSeconds < 3600) return `${Math.floor(ageInSeconds / 60)}m`;
+                if (ageInSeconds < 86400) return `${Math.floor(ageInSeconds / 3600)}h`;
+                return `${Math.floor(ageInSeconds / 86400)}d`;
+            }
+
+            updateTime() {
+                const now = new Date();
+                document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+                document.getElementById('updateTime').textContent = now.toLocaleString();
+            }
+
+            showError(message) {
+                document.getElementById('bidsTable').innerHTML = `<tr><td colspan="4" class="error">${message}</td></tr>`;
+                document.getElementById('asksTable').innerHTML = `<tr><td colspan="4" class="error">${message}</td></tr>`;
+            }
+
+            destroy() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                }
+            }
+        }
+
+        // Initialize the viewer when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.orderbookViewer = new OrderBookViewer();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (window.orderbookViewer) {
+                window.orderbookViewer.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@ const http = require('http');
 const logger = require('./utils/logger');
 const OrderBookManager = require('./services/orderbookManager');
 const BinanceWebSocket = require('./services/binanceWebSocket');
+const path = require('path'); // Added for serving static files
 
 class OrderBookServer {
     constructor() {
@@ -100,6 +101,11 @@ class OrderBookServer {
                     error: 'Internal server error'
                 });
             }
+        });
+
+        // Serve static HTML page for orderbook visualization
+        this.app.get('/orderbook-viewer', (req, res) => {
+            res.sendFile(path.join(__dirname, '../public/orderbook-viewer.html'));
         });
 
         // Get specific orderbook with limit
